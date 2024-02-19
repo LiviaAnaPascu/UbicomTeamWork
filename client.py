@@ -12,6 +12,11 @@
 # Box 2: [(1, 2), (2, 3), (3, 2), (2, 2)]
 # Box 3: [(3, 1), (4, 2), (5, 1), (4, 1)]
 # Box 4: [(3, 2), (4, 3), (5, 2), (4, 2)]
+
+# testJson_string =  '{"1": 0, "11": 0, "12": 0, "2": 0,
+#  "21": 0,"22": 1,"23": 0, "3": 0, "31": 0, "32": 0, "4": 0
+#  , "41": 0, "42":1, "43": 0, "51": 0, "52": 0}'
+
 from machine import Pin
 from time import sleep
 import ujson
@@ -145,6 +150,7 @@ def translate_received_value(value):
 def translate_received_board_state(boardStateData):
     translatedData = []
     for key, value in boardStateData.items():
+        print(key)
         if (len(key) == 2):  #THOSE ARE THE STATES OF LINES
             receivedRow = int(key[0])
             receivedColumn = int(key[1])
@@ -183,10 +189,12 @@ do_connect()
 def make_request(endpoint):
     try:
         response = urequests.get(endpoint)
-        print("Response code:", response.status_code)
-        print("Response text:", response.text)
-        decoded_data = ujson.loads(response.text)
-        print ("decoded Data", decoded_data)
+        print("Response:", response)
+        json_data = response.json()
+        print("Response JSON:", json_data)
+        translated_data = translate_received_board_state(json_data)
+        print("Translated data:", translated_data)
+      #print(ujson.dumps(json_data, indent=2))
     except Exception as e:
         print("Error:", e)
     finally:
@@ -194,7 +202,7 @@ def make_request(endpoint):
             response.close()
 
 # Example usage
-endpoint_url = "https://ubicom-team-work-898e5w4rh-liviaanapascus-projects.vercel.app/test"
+endpoint_url = "https://ubicom-team-work-seven.vercel.app/test"
 make_request(endpoint_url)
 
 
