@@ -27,8 +27,10 @@ def generate_box_coordinates():
 
 box_coordinates = generate_box_coordinates()
 
-for i, box in enumerate(box_coordinates):
-    print(f"Box {i + 1}: {box}")
+
+def translate():
+    for i, box in enumerate(box_coordinates):
+        print(f"Box {i + 1}: {box}")
 
 
 def print_grid_with_dots_and_lines(box_coords):
