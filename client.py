@@ -177,11 +177,16 @@ def do_connect():
 
 do_connect()
 
+
+
+
 def make_request(endpoint):
     try:
         response = urequests.get(endpoint)
         print("Response code:", response.status_code)
         print("Response text:", response.text)
+        decoded_data = ujson.loads(response.text)
+        print ("decoded Data", decoded_data)
     except Exception as e:
         print("Error:", e)
     finally:
@@ -189,7 +194,7 @@ def make_request(endpoint):
             response.close()
 
 # Example usage
-endpoint_url = "https://example.com/api/data"
+endpoint_url = "https://ubicom-team-work-898e5w4rh-liviaanapascus-projects.vercel.app/test"
 make_request(endpoint_url)
 
 
