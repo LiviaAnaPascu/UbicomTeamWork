@@ -17,6 +17,8 @@ from time import sleep
 import ujson
 import usocket as socket
 import network
+import urequests
+
 
 Off, On, isPressed, NotPressed = False, True, True, False
 
@@ -175,20 +177,39 @@ def do_connect():
 
 do_connect()
 
+def make_request(endpoint):
+    try:
+        response = urequests.get(endpoint)
+        print("Response code:", response.status_code)
+        print("Response text:", response.text)
+    except Exception as e:
+        print("Error:", e)
+    finally:
+        if response:
+            response.close()
+
+# Example usage
+endpoint_url = "https://example.com/api/data"
+make_request(endpoint_url)
+
+
+
 # Establish a socket connection with the server
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect((receiver_ip, server_port))
-print('Connected to the server at')
+# client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# client_socket.connect((receiver_ip, server_port))
+# print('Connected to the server at')
 
-testJson_string =  '{"1": 0, "11": 0, "12": 0, "2": 0, "21": 0, "23": 0, "3": 0, "31": 0, "32": 0, "4": 0, "41": 0, "43": 0, "5": 0, "51": 0, "52": 0}'
+# testJson_string =  '{"1": 0, "11": 0, "12": 0, "2": 0,
+#  "21": 0, "23": 0, "3": 0, "31": 0, "32": 0, "4": 0
+#  , "41": 0, "43": 0, "5": 0, "51": 0, "52": 0}'
 
-while True:
-    rowButton, colButton =  getPressedButton()
-    buttonPressed = str(rowButton) + str(colButton) ##TODO -- translation
+# while True:
+#     rowButton, colButton =  getPressedButton()
+#     buttonPressed = str(rowButton) + str(colButton)
 
-    gameBoardState = client_socket.recv(1024).decode('utf-8')
-    # Decode the received JSON data
-    decoded_data = ujson.loads(gameBoardState)
+#     gameBoardState = client_socket.recv(1024).decode('utf-8')
+#     # Decode the received JSON data
+#     decoded_data = ujson.loads(gameBoardState)
 
 
 
