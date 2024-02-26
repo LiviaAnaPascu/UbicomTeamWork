@@ -14,7 +14,7 @@ def get_coordinates():
 @app.route("/default")
 def default():
     result = defaultState()
-    return json.dump(result)
+    return result
 
 
 if __name__ == "__main__":
