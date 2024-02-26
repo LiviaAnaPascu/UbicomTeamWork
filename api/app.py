@@ -47,7 +47,9 @@ def get_coordinates():
 @app.route("/reset")
 def reset_gameboard():
     game = defaultState()
-    return game
+    # Serializing json
+    json_object = json.dumps(game, indent=4)
+    return json_object
     # with open("gameset.json", "w") as outfile:
     # json.dump(game, outfile)
 
