@@ -63,47 +63,88 @@ def checkBoxes(val, current, player):
                 return index + 1  # Return the key of the box
 
 
+def checkIsGameOver(current):
+    coordinates = generate_box_coordinates()
+    takenBoxes = 0
+    print(current["1"], current["2"], current["3"], current["4"])
+    for index, box in enumerate(coordinates):
+        box = current[str(index + 1)]
+        print(str(index + 1), ": ", box)
+        if box != 0:
+            takenBoxes += 1
+        if takenBoxes == 4:
+            return True
+
+
+def getWinner(player1Score, player2Score):
+    if player1Score > player2Score:
+        print("Player 1 Wins")
+    else:
+        print("Player 2 Wins")
+
+
 def play():
     coordinates = defaultState()
     player1Score = 0
     player2Score = 0
 
-    gameOver = False
-
     coordinates["21"] = 1
+    coordinates["11"] = 1
     coordinates["22"] = 1
     coordinates["31"] = 1
+    coordinates["12"] = 1
+    coordinates["23"] = 1
+    coordinates["32"] = 1
+    coordinates["41"] = 1
+    coordinates["43"] = 1
+    coordinates["51"] = 1
+    coordinates["52"] = 1
+    coordinates["2"] = 1
+    coordinates["1"] = 1
 
     print(coordinates)
+    currentPlayer = 1
+    lastKey = 0
 
     while True:
+        boxCheck = checkBoxes(lastKey, coordinates, currentPlayer)
+
         print("Player 1's turn.")
         player1Input = input("Enter line coordinates (row,column): ")
-        row, col = map(int, player1Input)
-        row -= 1
-        col -= 1
+        currentPlayer = 1
         for key in coordinates:
+            lastKey = key
             if key == player1Input and coordinates[key] == 0:
                 coordinates[key] = 1
-                boxNumber = checkBoxes(key, coordinates, 1)
-                if boxNumber is not None:
-                    coordinates[str(boxNumber)] = 1
+                boxCheck = checkBoxes(key, coordinates, currentPlayer)
+                if boxCheck is not None:
+                    coordinates[str(boxCheck)] = 1
                     player1Score += 1
+
+        boxCheck = checkBoxes(lastKey, coordinates, currentPlayer)
+        if checkIsGameOver(coordinates) is True:
+            getWinner(player1Score, player2Score)
+            break
 
         print("Player 2's turn.")
         player2Input = input("Enter line coordinates (row,column): ")
-        row, col = map(int, player2Input)
-        row -= 1
-        col -= 1
+        currentPlayer = 2
         for key in coordinates:
+            lastKey = key
             if key == player2Input and coordinates[key] == 0:
                 coordinates[key] = 1
-                boxCheck = checkBoxes(key, coordinates, 2)
+                boxCheck = checkBoxes(key, coordinates, currentPlayer)
                 if boxCheck is not None:
-                    coordinates[str(boxNumber)] = 2
+                    coordinates[str(boxCheck)] = 2
                     player2Score += 1
+        if checkIsGameOver(coordinates) is True:
+            getWinner(player1Score, player2Score)
+            break
 
-        print(coordinates)
+        boxCheck = checkBoxes(lastKey, coordinates, currentPlayer)
+        if checkIsGameOver(coordinates) is True:
+            getWinner(player1Score, player2Score)
+            break
 
 
 play()
