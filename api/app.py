@@ -1,5 +1,5 @@
 from flask import Flask
-from server import defaultState
+##from server import defaultState
 import json
 
 app = Flask(__name__)
@@ -11,10 +11,10 @@ def get_coordinates():
     return result
 
 
-@app.route("/default")
-def default():
-    result = defaultState()
-    return result
+# @app.route("/default")
+# def default():
+#     result = defaultState()
+#     return result
 
 
 if __name__ == "__main__":
