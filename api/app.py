@@ -54,7 +54,7 @@ mysql = MySQL(app)
 @app.route("/test")
 def get_coordinates():
     cursor = mysql.cursor()
-    cursor.execute("CREATE DATABASE IF NOT EXISTS books_db")
+    cursor.execute("CREATE TABLE GameBoards (time DATETIME PRIMARY KEY, gameBoard varchar(255))")
     cursor.execute("SHOW DATABASES")
     now = datetime.now()
     result = '{"1": 0, "11": 1, "12": 1, "2": 0, "21": 1, "23": 1, "3": 0, "31": 1, "32": 1, "4": 0, "41": 1, "43": 0, "5": 0, "51": 1, "52": 0}'
