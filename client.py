@@ -13,9 +13,9 @@
 # Box 3: [(3, 1), (4, 2), (5, 1), (4, 1)]
 # Box 4: [(3, 2), (4, 3), (5, 2), (4, 2)]
 
-# testJson_string =  '{"1": 0, "11": 0, "12": 0, "2": 0,
-#  "21": 0,"22": 1,"23": 0, "3": 0, "31": 0, "32": 0, "4": 0
-#  , "41": 0, "42":1, "43": 0, "51": 0, "52": 0}'
+# testJson_string =  '{"1": 2, "11": 0, "12": 0, "2": 0,
+#  "21": 0,"22": 1,"23": 0, "3": 0, "31": 0, "32": 0, "4": 1
+#  , "41": 0, "42":0, "43": 0, "51": 0, "52": 0}'
 
 from machine import Pin
 from time import sleep
@@ -28,13 +28,14 @@ import urequests
 Off, On, isPressed, NotPressed = False, True, True, False
 
 #BUTTONS SETUP
-buttons_total_rows = 3
-buttons_total_columns = 4
+buttons_total_rows = 4
+buttons_total_columns = 3
 
-button_column_pins = [Pin(36, Pin.IN), Pin(37, Pin.IN), Pin(38, Pin.IN),Pin(39, Pin.IN)]
+button_column_pins = [Pin(36, Pin.IN), Pin(37, Pin.IN), Pin(38, Pin.IN)]
 button_mux_a, button_mux_b = Pin(34, Pin.IN), Pin(35, Pin.IN)
 
 buttons = [[NotPressed for _ in range(buttons_total_columns)] for _ in range(buttons_total_rows)]
+print("Buttons", buttons)
 
 def getRow(): 
     muxA = button_mux_a.value()
@@ -45,6 +46,8 @@ def getRow():
         return 1
     elif (muxA == 0 and muxB == 1):
         return 2
+    elif (muxA == 0 and muxB == 1):
+        return 3
 
 def getColumn():
    for column in range(buttons_total_columns):
@@ -65,58 +68,82 @@ leds_total_columns = 5
 redColumn = 3
 blueColumn = 4
 #LAST 2 columns are RED and BLUE
-led_column_pins=[Pin(12, Pin.OUT), Pin(13, Pin.OUT),Pin(25, Pin.OUT), Pin(33, Pin.OUT), Pin(32, Pin.OUT)]
-led_mux_a, led_mux_b = Pin(17,Pin.OUT), Pin(23, Pin.OUT)
+led_column_pins=[Pin(22, Pin.OUT), Pin(23, Pin.OUT),Pin(2, Pin.OUT), Pin(17, Pin.OUT), Pin(32, Pin.OUT)]
+led_mux_a, led_mux_b = Pin(12,Pin.OUT), Pin(13, Pin.OUT)
 
 leds = [[Off for x in range(leds_total_columns)] for y in range(leds_total_rows) ]
 
+led_mux_a.off()
+led_mux_b.off()
+for col in led_column_pins:
+    col.off()
+
+
+print("LEDS", leds)
 print("GAME ON!")
 
-def activate_led_row(row):
-    # update multiplexer channel
-    if (row == 0):
+def activate_mux_channel(row):
+    if (row == 1):
         led_mux_a.off()
         led_mux_b.off()
-    elif (row == 1):
-        led_mux_a.on()
-        led_mux_b.off()
-
     elif (row == 2):
+        led_mux_a.on()
+        led_mux_b.off()
+    elif (row == 3):
         led_mux_a.off()
         led_mux_b.on()
-
-    elif (row == 3):
+    elif (row == 0):
         led_mux_a.on()
         led_mux_b.on()
 
+
+def activate_row(row, begin = 0, end = leds_total_columns):
+    activate_mux_channel(row)
+    # update column pins
     for column in range(leds_total_columns):
-        if(leds[row][column]):
+        if leds[row][column] and column >= begin and column < end:
             led_column_pins[column].on()
-        else: 
+        else:
             led_column_pins[column].off()
 
+
+current_led_row = 0
+
+def led_update():
+    global current_led_row
+    #print(current_led_row)
+    if current_led_row < leds_total_rows:
+        activate_row(current_led_row, 0, 3)
+        print(current_led_row)
+        sleep(0.001)
+    else:
+        pass
+        # activate_row(current_led_row % leds_total_rows, 3, 5)
+    current_led_row = (current_led_row + 1) % (leds_total_rows * 2)
 
 def setLed(row , col, value):
     leds[row][col] = value
 
 def setBoardState(translated_data):
-    for row, column, value in translated_data:
-        setLed(row, column, value)
-    
-    for row, _, _ in translated_data:
-        activate_led_row(row)
-        sleep(0.005)
+    for ledState in translated_data:
+        row, column, value = ledState
+        print(ledState)
+       # setLed(row, column, value)
+
+activate_mux_channel(0)
+led_column_pins[0].on()
+
 
 
 #DATA DECODING
 
 def translate_received_box_value_to_led_columns_and_state(value):
     if value == 0:
-        return [redColumn, blueColumn], Off
+        return [(redColumn, Off),(blueColumn, Off)]
     if value == 1:
-        return [redColumn], On
+        return [(redColumn, On), (blueColumn, Off)]
     if value == 2:
-        return [blueColumn], On 
+        return [(blueColumn, On), (redColumn, Off)] 
 
 def translate_received_box_key_toRow(key):
     if (key == 1):
@@ -129,17 +156,37 @@ def translate_received_box_key_toRow(key):
         return 2  
 
 def translate_received_row_and_column(row, column):
-    col_offset = column - 1
+    #'{"1": 0, "11": 0, "12": 0, "2": 0, "21": 0,"22": 1,"23": 0, "3": 0, "31": 0, "32": 0, "4": 0 , "41": 0, "42":1, "43": 0, "51": 0, "52": 0}'
+    #((0,0) (0,2), (1,0),(0,1))
     if row == 1:
-        return 0, col_offset if column == 2 else 0
+        if column == 1:
+          return 0,0
+        elif column == 2:
+          return 0,2
     elif row == 2:
-        return 1, col_offset
+        if column == 1:
+            return 1,0
+        elif column == 2:
+            return 0,1
+        elif column == 3:
+            return 1,2
     elif row == 3:
-        return 2, col_offset if column == 2 else 1
+        if column == 1:
+            return 2,0
+        elif column == 2:
+            return 1,1
     elif row == 4:
-        return 3, col_offset if column <= 2 else column - 2
+        if column == 1:
+            return 3,0
+        elif column == 2:
+            return 2,1
+        elif column == 3:
+            return 2,2
     elif row == 5:
-        return 3, col_offset    
+        if column == 1:
+            return 3,1
+        elif column == 2:
+            return 3,2   
 
 def translate_received_value(value):
     if value == 1:
@@ -150,26 +197,23 @@ def translate_received_value(value):
 def translate_received_board_state(boardStateData):
     translatedData = []
     for key, value in boardStateData.items():
-        print(key)
         if (len(key) == 2):  #THOSE ARE THE STATES OF LINES
             receivedRow = int(key[0])
             receivedColumn = int(key[1])
             row,column = translate_received_row_and_column(receivedRow, receivedColumn)
             val = translate_received_value(value)
-            translatedData.append((row, column, value))
+            translatedData.append((row, column, val))
         elif (len(key) == 1): #THOSE ARE THE STATES OF THE GRID BOXES
             intKey = int(key)
             translatedBoxRow = translate_received_box_key_toRow(intKey)
-            columnToUpdate, val = translate_received_box_value_to_led_columns_and_state(value)
-            for col in columnToUpdate:
+            columnToUpdate = translate_received_box_value_to_led_columns_and_state(value)
+            for columnAndValue in columnToUpdate:
+                col, val = columnAndValue
                 translatedData.append((translatedBoxRow, col, val))    
     return translatedData
 
 
 ###SERVER CONNECTION
-
-receiver_ip = '192.168.84.33' 
-server_port = 88
 
 def do_connect():
     wlan = network.WLAN(network.STA_IF)
@@ -183,18 +227,18 @@ def do_connect():
 
 do_connect()
 
+translatedData = []
 
-
-
-def make_request(endpoint):
+def request_board_state(endpoint):
     try:
         response = urequests.get(endpoint)
         print("Response:", response)
-        json_data = response.json()
-        print("Response JSON:", json_data)
-        translated_data = translate_received_board_state(json_data)
-        print("Translated data:", translated_data)
-      #print(ujson.dumps(json_data, indent=2))
+        json_data =response.json()
+        print("Response JSON:", '{"1": 0, "11": 0, "12": 0, "2": 0, "21": 0,"22": 1,"23": 0, "3": 0, "31": 0, "32": 0, "4": 0 , "41": 0, "42":1, "43": 0, "51": 0, "52": 0}')
+        translatedData = translate_received_board_state(json_data)
+        setBoardState(translatedData)
+        print("Translated data:", translatedData)
+        #print(ujson.dumps(json_data, indent=2))
     except Exception as e:
         print("Error:", e)
     finally:
@@ -203,31 +247,15 @@ def make_request(endpoint):
 
 # Example usage
 endpoint_url = "https://ubicom-team-work-seven.vercel.app/test"
-make_request(endpoint_url)
-
-
-
-# Establish a socket connection with the server
-# client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# client_socket.connect((receiver_ip, server_port))
-# print('Connected to the server at')
-
-# testJson_string =  '{"1": 0, "11": 0, "12": 0, "2": 0,
-#  "21": 0, "23": 0, "3": 0, "31": 0, "32": 0, "4": 0
-#  , "41": 0, "43": 0, "5": 0, "51": 0, "52": 0}'
+request_board_state(endpoint_url)
+print("NEW LEDS",leds)
 
 # while True:
-#     rowButton, colButton =  getPressedButton()
-#     buttonPressed = str(rowButton) + str(colButton)
-
-#     gameBoardState = client_socket.recv(1024).decode('utf-8')
-#     # Decode the received JSON data
-#     decoded_data = ujson.loads(gameBoardState)
+#     led_update()
 
 
-
-
-
+# while True: 
+#     sleep(1)
 
 
 
