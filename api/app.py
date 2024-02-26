@@ -9,6 +9,11 @@ grid_size = 3
 #  , "41": 0, "42":1, "43": 0, "51": 0, "52": 0}'
 # HELPER FUNCTION
 
+def write_to_store(dict_json):
+    # Writing to sample.json
+    with open("sample.json", "w") as outfile:
+        outfile.write(dict_json)
+
 def generate_box_coordinates():
     box_coords = []
     for i in range(1, grid_size * 2, 2):
@@ -49,6 +54,7 @@ def reset_gameboard():
     game = defaultState()
     # Serializing json
     json_object = json.dumps(game, indent=4)
+    write_to_store(json_object)
     return json_object
     # with open("gameset.json", "w") as outfile:
     # json.dump(game, outfile)
