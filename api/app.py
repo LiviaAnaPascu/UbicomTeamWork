@@ -12,7 +12,7 @@ grid_size = 3
 def write_to_store(dict_json):
     # Writing to sample.json
     with open("gameset.json", "w") as outfile:
-        outfile.write(dict_json)
+       json.dump(dict_json, file)
 
 def generate_box_coordinates():
     box_coords = []
