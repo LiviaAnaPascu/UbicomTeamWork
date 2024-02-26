@@ -1,4 +1,6 @@
 from flask import Flask
+from flask_mysqldb import MySQL
+from datetime import datetime
 import json
 
  
@@ -43,8 +45,19 @@ def defaultState():
 
 app = Flask(__name__)
 
+app.config['MYSQL_HOST'] = 'sql11.freesqldatabase.com'
+app.config['MYSQL_USER'] = 'sql11686941'
+app.config['MYSQL_PASSWORD'] = '1KtvLJDb4z'
+app.config['MYSQL_DB'] = 'flask'
+ 
+mysql = MySQL(app)
+
 @app.route("/test")
 def get_coordinates():
+    cursor = mysql.cursor()
+    cursor.execute("CREATE DATABASE IF NOT EXISTS books_db")
+    cursor.execute("SHOW DATABASES")
+    now = datetime.now()
     result = '{"1": 0, "11": 1, "12": 1, "2": 0, "21": 1, "23": 1, "3": 0, "31": 1, "32": 1, "4": 0, "41": 1, "43": 0, "5": 0, "51": 1, "52": 0}'
     return result
 
