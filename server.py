@@ -145,6 +145,3 @@ def play():
         if checkIsGameOver(coordinates) is True:
             getWinner(player1Score, player2Score)
             break
-
-
-play()
