@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_mysqldb import MySQL
+from flask_mysqldb import mysql
 from datetime import datetime
 import json
 
