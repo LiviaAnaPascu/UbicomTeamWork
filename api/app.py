@@ -51,11 +51,18 @@ app.config['MYSQL_PASSWORD'] = '1KtvLJDb4z'
  
 mysql = MySQL(app)
 
+def create_table():
+    cur = mysql.connection.cursor()
+    cur.execute('''CREATE TABLE IF NOT EXISTS gameboard (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        time DATETIME,
+        board VARCHAR(255))''')
+    mysql.connection.commit()
+    cur.close()
+
+
 @app.route("/test")
 def get_coordinates():
-    cursor = mysql.cursor()
-    cursor.execute("CREATE TABLE GameBoards (time DATETIME PRIMARY KEY, gameBoard varchar(255))")
-    cursor.execute("SHOW DATABASES")
     now = datetime.now()
     result = '{"1": 0, "11": 1, "12": 1, "2": 0, "21": 1, "23": 1, "3": 0, "31": 1, "32": 1, "4": 0, "41": 1, "43": 0, "5": 0, "51": 1, "52": 0}'
     return result
@@ -85,4 +92,5 @@ def reset_gameboard():
 
 
 if __name__ == "__main__":
+    create_table()
     app.run()
