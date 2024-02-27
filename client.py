@@ -31,34 +31,33 @@ Off, On, isPressed, NotPressed = False, True, True, False
 buttons_total_rows = 4
 buttons_total_columns = 3
 
-button_column_pins = [Pin(36, Pin.IN), Pin(37, Pin.IN), Pin(38, Pin.IN)]
-button_mux_a, button_mux_b = Pin(34, Pin.IN), Pin(35, Pin.IN)
+p_btnmux_a = Pin(25, Pin.OUT)
+p_btnmux_b = Pin(33, Pin.OUT)
+buttons_columns = [Pin(39, Pin.IN), Pin(38, Pin.IN), Pin(37, Pin.IN)]
+button_reset = Pin(36, Pin.IN)
 
-buttons = [[NotPressed for _ in range(buttons_total_columns)] for _ in range(buttons_total_rows)]
-print("Buttons", buttons)
-
-def getRow(): 
-    muxA = button_mux_a.value()
-    muxB = button_mux_b.value()
-    if(muxA == 0 and muxB == 0):
-        return 0
-    elif (muxA == 1 and muxB == 0):
-        return 1
-    elif (muxA == 0 and muxB == 1):
-        return 2
-    elif (muxA == 0 and muxB == 1):
-        return 3
-
-def getColumn():
-   for column in range(buttons_total_columns):
-       if(button_column_pins[column].value() == 1):
-           return column
-        
-def getPressedButton():
-    row, column = getRow, getColumn
-
-    return row, column
-
+def check_buttons():
+    # if button_reset.value() == 1:
+    #     return "reset"
+    for row in range(buttons_total_rows):
+        # update multiplexer channel
+        if row == 1:
+            p_btnmux_a.off()
+            p_btnmux_b.off()
+        elif row == 3:
+            p_btnmux_a.on()
+            p_btnmux_b.off()
+        elif row == 2:
+            p_btnmux_a.off()
+            p_btnmux_b.on()
+        elif row == 0:
+            p_btnmux_a.on()
+            p_btnmux_b.on()
+        sleep(0.001)
+        # check column pins
+        for column in range(buttons_total_columns):
+            if buttons_columns[column].value() == 1:
+                return row, column
 
 #LEDS SETUP
 
@@ -118,7 +117,7 @@ def led_update():
         sleep(0.001)
     else:
         pass
-        # activate_row(current_led_row % leds_total_rows, 3, 5)
+        activate_row(current_led_row % leds_total_rows, 3, 5)
     current_led_row = (current_led_row + 1) % (leds_total_rows * 2)
 
 def setLed(row , col, value):
@@ -127,11 +126,9 @@ def setLed(row , col, value):
 def setBoardState(translated_data):
     for ledState in translated_data:
         row, column, value = ledState
-        print(ledState)
-       # setLed(row, column, value)
+        setLed(row, column, value)
+    led_update()
 
-activate_mux_channel(0)
-led_column_pins[0].on()
 
 
 
@@ -156,8 +153,6 @@ def translate_received_box_key_toRow(key):
         return 2  
 
 def translate_received_row_and_column(row, column):
-    #'{"1": 0, "11": 0, "12": 0, "2": 0, "21": 0,"22": 1,"23": 0, "3": 0, "31": 0, "32": 0, "4": 0 , "41": 0, "42":1, "43": 0, "51": 0, "52": 0}'
-    #((0,0) (0,2), (1,0),(0,1))
     if row == 1:
         if column == 1:
           return 0,0
@@ -223,7 +218,7 @@ def do_connect():
         wlan.connect('Elenas', '1234567890')
         while not wlan.isconnected():
             pass
-    print('network config:', wlan.ifconfig())
+    print('network: connected', wlan.ifconfig())
 
 do_connect()
 
@@ -233,11 +228,9 @@ def request_board_state(endpoint):
     try:
         response = urequests.get(endpoint)
         print("Response:", response)
-        json_data =response.json()
-        print("Response JSON:", '{"1": 0, "11": 0, "12": 0, "2": 0, "21": 0,"22": 1,"23": 0, "3": 0, "31": 0, "32": 0, "4": 0 , "41": 0, "42":1, "43": 0, "51": 0, "52": 0}')
+        json_data = response.json()
         translatedData = translate_received_board_state(json_data)
         setBoardState(translatedData)
-        print("Translated data:", translatedData)
         #print(ujson.dumps(json_data, indent=2))
     except Exception as e:
         print("Error:", e)
@@ -245,13 +238,37 @@ def request_board_state(endpoint):
         if response:
             response.close()
 
-# Example usage
-endpoint_url = "https://ubicom-team-work-seven.vercel.app/test"
-request_board_state(endpoint_url)
-print("NEW LEDS",leds)
+def sendMove(row, col): 
+     try:
+        response = urequests.get()
+        json_data = response.json()
+        translatedData = translate_received_board_state(json_data)
+        setBoardState(translatedData)
+        #print(ujson.dumps(json_data, indent=2))
+    except Exception as e:
+        print("Error:", e)
+    finally:
+        if response:
+            response.close()
 
-# while True:
-#     led_update()
+latestLeds_url = "https://lines-and-boxes-server.vercel.app/latestGameboard"
+resetGame_url = "https://lines-and-boxes-server.vercel.app/resetGame"
+makeMove_url = "https://lines-and-boxes-server.vercel.app/makeMove"
+
+button_last = None
+currentTime = 2000
+while True:
+    button = check_buttons()
+    led_update()
+    if currentTime == 0:
+        request_board_state(latestLeds_url)
+        currentTime = 2000
+    else:
+        currentTime = currentTime - 1
+    
+    if button and button != button_last:
+        
+    button_last = button
 
 
 # while True: 
