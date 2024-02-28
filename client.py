@@ -37,8 +37,6 @@ buttons_columns = [Pin(39, Pin.IN), Pin(38, Pin.IN), Pin(37, Pin.IN)]
 button_reset = Pin(36, Pin.IN)
 
 def check_buttons():
-    # if button_reset.value() == 1:
-    #     return "reset"
     for row in range(buttons_total_rows):
         # update multiplexer channel
         if row == 1:
@@ -110,10 +108,8 @@ current_led_row = 0
 
 def led_update():
     global current_led_row
-    #print(current_led_row)
     if current_led_row < leds_total_rows:
         activate_row(current_led_row, 0, 3)
-        print(current_led_row)
         sleep(0.001)
     else:
         pass
@@ -129,8 +125,37 @@ def setBoardState(translated_data):
         setLed(row, column, value)
     led_update()
 
-
-
+#ENCODE BUTTONS
+def translate_sent_row_and_column(row, column):
+    if row == 0:
+        if column == 0:
+            return "1", "1"
+        elif column == 2:
+            return "1", "2"
+    elif row == 1:
+        if column == 0:
+            return "2", "1"
+        elif column == 1:
+            return "2", "2"
+        elif column == 2:
+            return "2", "3"
+    elif row == 2:
+        if column == 0:
+            return "3", "1"
+        elif column == 1:
+            return "3", "2"
+    elif row == 3:
+        if column == 0:
+            return "4", "1"
+        elif column == 1:
+            return "4", "2"
+        elif column == 2:
+            return "4", "3"
+    elif row == 4:
+        if column == 1:
+            return "5", "1"
+        elif column == 2:
+            return "5", "2"
 
 #DATA DECODING
 
@@ -227,39 +252,43 @@ translatedData = []
 def request_board_state(endpoint):
     try:
         response = urequests.get(endpoint)
-        print("Response:", response)
         json_data = response.json()
         translatedData = translate_received_board_state(json_data)
         setBoardState(translatedData)
-        #print(ujson.dumps(json_data, indent=2))
+        print(json_data)
     except Exception as e:
         print("Error:", e)
-    finally:
-        if response:
-            response.close()
 
 def sendMove(row, col): 
-     try:
-        response = urequests.get()
+    try:
+        response = urequests.get(makeMove_url + "?row=" + row + "&col=" + col + "&player=" + "1")
         json_data = response.json()
-        translatedData = translate_received_board_state(json_data)
-        setBoardState(translatedData)
-        #print(ujson.dumps(json_data, indent=2))
+        print(json_data)
     except Exception as e:
         print("Error:", e)
-    finally:
-        if response:
-            response.close()
+    
 
-latestLeds_url = "https://lines-and-boxes-server.vercel.app/latestGameboard"
-resetGame_url = "https://lines-and-boxes-server.vercel.app/resetGame"
-makeMove_url = "https://lines-and-boxes-server.vercel.app/makeMove"
+def resetGame():
+    try:
+        response = urequests.get(resetGame_url)
+        json_data = response.json()
+        print(json_data)
+    except Exception as e:
+        print("Error:", e)
+    
+
+latestLeds_url = "https://lines-and-boxes-server-delta.vercel.app/latestGameboard"
+resetGame_url = "https://lines-and-boxes-server-delta.vercel.app/resetGame"
+makeMove_url = "https://lines-and-boxes-server-delta.vercel.app/makeMove"
 
 button_last = None
 currentTime = 2000
+request_board_state(latestLeds_url)
 while True:
     button = check_buttons()
     led_update()
+    if button_reset.value() == 1:
+       resetGame()
     if currentTime == 0:
         request_board_state(latestLeds_url)
         currentTime = 2000
@@ -267,8 +296,10 @@ while True:
         currentTime = currentTime - 1
     
     if button and button != button_last:
-        
-    button_last = button
+        row, col = button
+        translatedRow, translatedCol = translate_sent_row_and_column(row, col)
+        sendMove(translatedRow, translatedCol)
+        button_last = button
 
 
 # while True: 
